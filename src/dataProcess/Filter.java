@@ -61,20 +61,30 @@ public class Filter {
      * 路径配置
      * D:\cbd\！！毕业论文\给贺小木的数据处理代码+数据\wkqdianping\rawdata\checkinWithTimestamp_15.txt
      */
-    public static String rootPath = "D:\\cbd\\！！毕业论文\\给贺小木的数据处理代码+数据\\wkqdianping\\rawdata\\";
+    public static String rootPath = "./rawdata/";
 //    public static String shopInfoPath = rootPath + "shopInfo_deduplicate.json";
-    public static String desPath = rootPath + "checkinWithTime_filter\\";
+    public static String desPath = rootPath + "newFilter_utp/";
 //    public static String reviewPath = rootPath +"test_15.txt";
     public static String reviewPath =rootPath+"checkinWithTimestamp_15false.txt";
 //    public static String categoryFilterPath = "";//只取重庆火锅这类菜
 
     public static void main(String[] args) {
         System.out.println("start " + new Date());
-        int userLeastCount = 25; //每个用户去过10个以上的餐厅
-        int itemLeastCount = 25; //每家餐厅被10个以上的用户访问过
-//        int dishLeastCount = 10; // 每家餐厅至少有10道菜
-//        int dishReviewedLeastCount = 10;//每道菜至少被10个不同的<user-shop>对访问过
+        int userLeastCount = 15; //每个用户去过10个以上的餐厅
+        int itemLeastCount = 10; //每家餐厅被10个以上的用户访问过
         boolean isMapping = false; //保存的签到记录中id是否映射为顺序id, true为映射，false为保留原来的id
+
+        /**
+         * 随机抽样一部分数据，然后再进行过滤
+         */
+        boolean issample = true;
+        if(issample){
+            double randomRatio = 0.3;
+            System.out.println("sample ratio\t" + randomRatio);
+            randomSample(randomRatio);
+            reviewPath=rootPath+"sample/" + "DianpingCheckin_sample" +"_"  + randomRatio  + ".txt";
+
+        }
 
 
 
@@ -108,7 +118,7 @@ public class Filter {
 
 
 //        outputResultWithMapWithTime(globalUserItemSetMap, resultSet, userLeastCount, itemLeastCount, isMapping);
-        outputResultWithMap(globalUserItemSetMap, resultSet, userLeastCount, itemLeastCount, isMapping);
+        outputResultWithMap(globalUserItemSetMap, resultSet, userLeastCount, itemLeastCount,issample, isMapping);
         System.out.println("end " + new Date());
     }
     /**
@@ -257,7 +267,7 @@ public class Filter {
      * @param isMapping
      */
     public static void outputResultWithMap(Map<String, Set<String>> userItemSetMap,
-                                                   Set<String>[] resultSet,  int userLeastCount, int itemLeastCount, boolean isMapping) {
+                                                   Set<String>[] resultSet,  int userLeastCount, int itemLeastCount,boolean issample, boolean isMapping) {
         Map<String, Integer> userMap = new ConcurrentHashMap<>();
         Map<String, Integer> itemMap = new ConcurrentHashMap<>();
         Set<String> userSet = resultSet[0];
@@ -287,22 +297,22 @@ public class Filter {
                 String tempTime = contents[2];
 //                String tempinfo = contents[3] + "\t" + contents[4] + "\t" + contents[5];//cat, lng,lat
                 if (itemSet.contains(tempItem) & (userSet.contains(tempUser))) {
+                //   用于重新编号,统计数量
+                    int innerUser = userIds.containsKey(tempUser) ? userIds.get(tempUser) : userIds.size();
+                    userIds.put(tempUser, innerUser);
+
+                    int innerPoi = poiIds.containsKey(tempItem) ? poiIds.get(tempItem) : poiIds.size();
+                    poiIds.put(tempItem, innerPoi);
+
+                    int innerTime = timeIds.containsKey(tempTime) ? timeIds.get(tempTime) : timeIds.size();
+                    timeIds.put(tempTime, innerTime);
                     if (isMapping) {
-                        //        用于重新编号
-                        int innerUser = userIds.containsKey(tempUser) ? userIds.get(tempUser) : userIds.size();
-                        userIds.put(tempUser, innerUser);
-
-                        int innerPoi = poiIds.containsKey(tempItem) ? poiIds.get(tempItem) : poiIds.size();
-                        poiIds.put(tempItem, innerPoi);
-
-                        int innerTime = timeIds.containsKey(tempTime) ? timeIds.get(tempTime) : timeIds.size();
-                        timeIds.put(tempTime, innerTime);
-
-                        userItemFreStr.append(innerUser + "\t" + innerPoi + "\t" + innerTime + "\n");
-
+                        //模型正确的输入顺序
+                        userItemFreStr.append(innerUser  + "\t" + innerTime + "\t" + innerPoi +"\n");
                         filteredTripleNum++;
                     } else {
-                        userItemFreStr.append(tempUser + "\t" + tempItem + "\t" + tempTime + "\n");
+                        //模型正确的输入顺序
+                        userItemFreStr.append(tempUser +  "\t" + tempTime +"\t" + tempItem + "\n");
                         filteredTripleNum++;
                     }
                 }
@@ -317,7 +327,7 @@ public class Filter {
         }
         System.out.println("filter condition " + userLeastCount + " " + itemLeastCount );
         System.out.println("user number:"+userIds.size()+" shop number:"+poiIds.size()+" time number:"+timeIds.size()+" total number:"+filteredTripleNum);
-        FileOperation.writeNotAppdend(desPath + "DianpingCheckin" + isMapping + userLeastCount + itemLeastCount + ".txt", userItemFreStr.toString());
+        FileOperation.writeNotAppdend(desPath + "DianpingCheckin"+ issample +"_" + isMapping + userLeastCount + itemLeastCount + ".txt", userItemFreStr.toString());
 //        FileOperation.writeNotAppdend(checkWithTimePath + "checkinWithTimestamp.txt", checkinWithTimestampBuilder.toString());
     }
 
@@ -434,5 +444,39 @@ public class Filter {
         return pattern.matcher(str).matches();
     }
 
+    /**
+     * sample一部分数据写入文件，然后在进行过滤
+     * @param randomRatio
+     */
+    public static void randomSample(double randomRatio) {
+
+        //太占用内存 因此替换上一段直接对文件过滤
+        StringBuilder userItemFreStr = new StringBuilder();
+        FileInputStream file;
+        BufferedReader bufferedReader;
+        String read;
+        StringBuilder sampleStr=new StringBuilder();
+        try {
+            file = new FileInputStream(reviewPath);
+            bufferedReader = new BufferedReader(new InputStreamReader(file, "UTF-8"));
+//            System.out.println("output");
+            Random random = new Random(1);
+            while ((read = bufferedReader.readLine()) != null) {
+                if (random.nextDouble() < randomRatio) {
+                    sampleStr.append(read+"\n");
+                }
+            }
+        }catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("after sample\t" + randomRatio);
+        FileOperation.writeNotAppdend(rootPath+ "sample/"+ "DianpingCheckin_sample" +"_"  + randomRatio  + ".txt", sampleStr.toString());
+
+    }
 }
 

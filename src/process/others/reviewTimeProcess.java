@@ -80,7 +80,7 @@ public class reviewTimeProcess {
                     /**
                      * 对时间进行过滤
                      */
-                    if (year.equals("15")) {
+                    if (year.equals("15")||year.equals("14")) {
                         if(shopCategoryMap.get(poiId)!=null) {
 //                            String category = shopCategoryMap.get(poiId);
                             String Info = shopCategoryMap.get(poiId);
@@ -163,8 +163,8 @@ public class reviewTimeProcess {
         }
 
 //        FileOperation.writeNotAppdend(checkWithTimePath + "checkinWithTimestampStatistics.txt", timeStatisticsBuilder.toString());
-        FileOperation.writeNotAppdend(checkWithTimePath + "checkinWithTimestamp_15"+mapping+".txt", checkinWithTimestampBuilder.toString());
-        FileOperation.writeNotAppdend(checkWithTimePath +"shopInfo_15.txt",shopinfoBuilder.toString());
+        FileOperation.writeNotAppdend(checkWithTimePath + "checkinWithTimestamp_1415"+mapping+".txt", checkinWithTimestampBuilder.toString());
+        FileOperation.writeNotAppdend(checkWithTimePath +"shopInfo_1415.txt",shopinfoBuilder.toString());
 //        FileOperation.writeNotAppdend(checkWithTimePath+"checkinWithTimestamp_userMapIndex",userIds.toString());
 //        FileOperation.writeNotAppdend(checkWithTimePath+"checkinWithTimestamp_poiMapIndex",poiIds.toString());
 //        FileOperation.writeNotAppdend(checkWithTimePath+"checkinWithTimestamp_cateMapIndex",categoryIds.toString());
@@ -333,7 +333,7 @@ public class reviewTimeProcess {
 
     public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
         boolean mapping=false;
-        reviewProcess(mapping);
+        reviewProcess(true);
         /**
          * 统计所用
          */
@@ -342,10 +342,10 @@ public class reviewTimeProcess {
 //        String filteredPOIDescriptionPath = "D:\\我的工作\\投稿论文\\彭宏伟计算机学报\\实验所用数据\\Dianping_v2\\review_social\\1DianpingDescription1010100.txt";
 //        processDianpingFilteredData(filteredPOIDescriptionPath);
     }
-    public static void test(){
+    /*public static void test(){
         Map<String,String> a=new HashMap<>();
         a.put("a","123");
         a.put("b","4545");
         FileOperation.writeNotAppdend("D:\\cbd\\！！毕业论文\\给贺小木的数据处理代码+数据\\wkqdianping\\test.txt",a.toString());
-    }
+    }*/
 }

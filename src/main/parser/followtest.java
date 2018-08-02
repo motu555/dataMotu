@@ -8,6 +8,7 @@ import java.util.List;
 
 /**
  * Created by motu on 2018/7/8.
+ * 取出能匹配到的所有_15用户
  */
 public class followtest {
     public static void main(String[] args) throws IOException {
